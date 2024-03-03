@@ -921,7 +921,7 @@ public:
     
     /*─······································································─*/
 
-	void pipe(){ if( obj->state == 1 ){ return; } auto inp = type::bind( this );
+	void pipe(){ if( obj->state == 1 ){ return; } auto self = type::bind( this );
 
         if( obj->dpy == NULL )
           { process::error( onError, "can't start X11 server" ); close(); return; }
@@ -934,55 +934,55 @@ public:
         process::loop::add([=](){ 
         coStart 
 		
-        	while( XPending( inp->obj->dpy ) <= 0 ){ coNext; } 
-                 XNextEvent( inp->obj->dpy, &inp->obj->event );
+        	while( XPending( self->obj->dpy ) <= 0 ){ coNext; } 
+                 XNextEvent( self->obj->dpy, &self->obj->event );
 
     /*─······································································─*/
 
-            if( inp->obj->event.type == MotionNotify ) { 
-                auto bt = inp->obj->event.xmotion;
-                inp->onMouseMotion.emit( bt.x, bt.y ); 
-            }
-
-    /*─······································································─*/
-
-            elif( inp->obj->event.type == ButtonRelease ) { 
-                     auto bt = inp->obj->event.xbutton.button;
-                for( ulong x=inp->obj->button.size(); x--; ){
-                 if( inp->obj->button[x] == bt ) 
-                   { inp->obj->button.erase(x); }
-                }    inp->onButtonRelease.emit( bt ); 
-            }
-
-            elif( inp->obj->event.type == ButtonPress ) { 
-                     auto bt = inp->obj->event.xbutton.button;
-                for( ulong x=inp->obj->button.size(); x--; ){
-                 if( inp->obj->button[x] == bt ){ return 1; }
-                }    inp->obj->button.push( bt ); 
-                     inp->onButtonPress.emit( bt );
+            if( self->obj->event.type == MotionNotify ) { 
+                auto bt = self->obj->event.xmotion;
+                self->onMouseMotion.emit( bt.x, bt.y ); 
             }
 
     /*─······································································─*/
 
-            elif( inp->obj->event.type == KeyRelease ) { 
-                     auto bt = inp->obj->event.xkey.keycode;
-                for( ulong x=inp->obj->key.size(); x--; ){
-                 if( inp->obj->key[x] == bt ) 
-                   { inp->obj->key.erase(x); }
-                }    inp->onKeyRelease.emit( bt ); 
+            elif( self->obj->event.type == ButtonRelease ) { 
+                     auto bt = self->obj->event.xbutton.button;
+                for( ulong x=self->obj->button.size(); x--; ){
+                 if( self->obj->button[x] == bt ) 
+                   { self->obj->button.erase(x); }
+                }    self->onButtonRelease.emit( bt ); 
             }
 
-            elif( inp->obj->event.type == KeyPress ) { 
-                     auto bt = inp->obj->event.xkey.keycode;
-                for( ulong x=inp->obj->key.size(); x--; ){
-                 if( inp->obj->key[x] == bt ){ return 1; }
-                }    inp->obj->key.push( bt ); 
-                     inp->onKeyPress.emit( bt );
+            elif( self->obj->event.type == ButtonPress ) { 
+                     auto bt = self->obj->event.xbutton.button;
+                for( ulong x=self->obj->button.size(); x--; ){
+                 if( self->obj->button[x] == bt ){ return 1; }
+                }    self->obj->button.push( bt ); 
+                     self->onButtonPress.emit( bt );
             }
 
     /*─······································································─*/
 
-            if( !inp->is_closed() ) coGoto(0);
+            elif( self->obj->event.type == KeyRelease ) { 
+                     auto bt = self->obj->event.xkey.keycode;
+                for( ulong x=self->obj->key.size(); x--; ){
+                 if( self->obj->key[x] == bt ) 
+                   { self->obj->key.erase(x); }
+                }    self->onKeyRelease.emit( bt ); 
+            }
+
+            elif( self->obj->event.type == KeyPress ) { 
+                     auto bt = self->obj->event.xkey.keycode;
+                for( ulong x=self->obj->key.size(); x--; ){
+                 if( self->obj->key[x] == bt ){ return 1; }
+                }    self->obj->key.push( bt ); 
+                     self->onKeyPress.emit( bt );
+            }
+
+    /*─······································································─*/
+
+            if( !self->is_closed() ) coGoto(0);
 			
 		coStop 
         });
