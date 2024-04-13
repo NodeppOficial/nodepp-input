@@ -1,6 +1,7 @@
 #pragma once
 
 //https://manpages.ubuntu.com/manpages/focal/man7/virkeycode-linux.7.html
+
 /*
 #define K_ESCAPE  0x01
 #define K_MINUS   0x0C
@@ -735,7 +736,8 @@ protected:
 
     ptr_t<float> screen_ref( const float& x, const float& y ) const noexcept{
         auto size = get_screen_size(); return {{
-            x * size[0] / 100, y * size[1] / 100
+            x * size[0] / 100, 
+            y * size[1] / 100
         }};
 	};
 
@@ -764,6 +766,13 @@ public:
 	
     /*─······································································─*/
 
+	virtual ~input_t() noexcept { 
+		if( obj.count() > 1 )
+          { return; } free(); 
+	}
+	
+    /*─······································································─*/
+
     Display* get_Display(){ return obj->dpy; }
     void     set_Display( Display* dpy ){ obj->dpy = dpy; }
 
@@ -778,13 +787,6 @@ public:
 
     int&     get_ID(){ return obj->id; }
     void     set_ID( int id ){ obj->id = id; }
-	
-    /*─······································································─*/
-
-	virtual ~input_t() noexcept { 
-		if( obj.count() > 1 ){ return; } 
-			force_close(); 
-	}
 
     /*─······································································─*/
 
@@ -792,7 +794,7 @@ public:
 
     bool is_closed() const noexcept { return obj==nullptr ? 1 : obj->state==-1; }
 
-    virtual void force_close() const noexcept {
+    virtual void free() const noexcept {
         if( obj->state == -1 ){ return; } obj->state = -1; 
         	XDestroyWindow( obj->dpy, obj->win ); 
 			XCloseDisplay( obj->dpy );

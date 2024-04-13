@@ -165,44 +165,24 @@
 #define K_MPREV    0xB1
 #define K_MSTOP    0xB2
 #define K_MPLAY    0xB3
-*/
 
-/*
-VK_LAUNCH_MAIL	0xB4	Start Mail key
-VK_LAUNCH_MEDIA_SELECT	0xB5	Select Media key
-VK_LAUNCH_APP1	0xB6	Start Application 1 key
-VK_LAUNCH_APP2	0xB7	Start Application 2 key
+#define K_OEM_1    0xBA
+#define K_OEM_2    0xBF
+#define K_OEM_3    0xC0
+#define K_OEM_4    0xDB
+#define K_OEM_5    0xDC
+#define K_OEM_6    0xDD
+#define K_OEM_7    0xDE
+#define K_OEM_8    0xDF
+#define K_OEM_9    0xFE
 
-VK_OEM_1	0xBA	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ;: key
-VK_OEM_PLUS	0xBB	For any country/region, the + key
-VK_OEM_COMMA	0xBC	For any country/region, the , key
-VK_OEM_MINUS	0xBD	For any country/region, the - key
-VK_OEM_PERIOD	0xBE	For any country/region, the . key
-VK_OEM_2	0xBF	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the /? key
-VK_OEM_3	0xC0	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the `~ key
-
-VK_OEM_4	0xDB	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the [{ key
-VK_OEM_5	0xDC	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the \\| key
-VK_OEM_6	0xDD	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ]} key
-VK_OEM_7	0xDE	Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '" key
-VK_OEM_8	0xDF	Used for miscellaneous characters; it can vary by keyboard.
-
-VK_OEM_102	0xE2	The <> keys on the US standard keyboard, or the \\| key on the non-US 102-key keyboard
-
-
-VK_PACKET	0xE7	Used to pass Unicode characters as if they were keystrokes. The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP
-
-VK_ATTN	0xF6	Attn key
-
-VK_CRSEL	0xF7	CrSel key
-VK_EXSEL	0xF8	ExSel key
-VK_EREOF	0xF9	Erase EOF key
-
-VK_PLAY	0xFA	Play key
-VK_ZOOM	0xFB	Zoom key
-
-VK_PA1	0xFD	PA1 key
-VK_OEM_CLEAR	0xFE	Clear key
+#define K_PLUS     0xBB
+#define K_MINUS    0xBD
+#define K_PERIOD   0xBE
+#define K_COMMA    0xBC
+#define K_ERASE    0xF9
+#define K_EXSEL    0xF8
+#define K_CRSEL    0xF7
 */
 
 /*────────────────────────────────────────────────────────────────────────────*/
@@ -217,8 +197,8 @@ namespace nodepp { class input_t {
 protected:
 
     struct image_t {
-        ptr_t<char> data;
         int width, height;
+        ptr_t<char> data;
     };
 
     struct NODE {
@@ -229,7 +209,8 @@ protected:
 
     ptr_t<float> screen_ref( const float& x, const float& y ) const noexcept{
         auto size = get_screen_size(); return {{
-            x * size[0] / 100, y * size[1] / 100
+            x * size[0] / 100, 
+            y * size[1] / 100
         }};
 	};
 
@@ -249,8 +230,8 @@ public: input_t() noexcept : obj( new NODE() ) {}
     /*─······································································─*/
 
 	virtual ~input_t() noexcept { 
-		if( obj.count() > 1 ){ return; } 
-			force_close(); 
+		if( obj.count() > 1 )
+          { return; } free(); 
 	}
 
     /*─······································································─*/
@@ -259,7 +240,7 @@ public: input_t() noexcept : obj( new NODE() ) {}
 
     bool is_closed() const noexcept { return obj==nullptr ? 1 : obj->state==-1; }
 
-    virtual void force_close() const noexcept {
+    virtual void free() const noexcept {
         if( obj->state == -1 ){ return; } 
 			obj->state =  -1;
     }
