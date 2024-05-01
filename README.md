@@ -1,10 +1,10 @@
 # NODEPP-INPUT
-emulate keyboard / mouse inputs in windows, linux and Mac, using [Nodepp](https://github.com/NodeppOficial/nodepp).
+Emulate Keyboard/Mouse Inputs in Windows, Linux and Mac, using [Nodepp](https://github.com/NodeppOficial/nodepp).
 
 ## Dependencies
-- libx11-dev  ( posix only )
-- libxtst-dev ( posix only )
+- libx11-dev  **( posix only )**
+- libxtst-dev **( posix only )**
 
 ## compilation
-- windows: `g++ -o main main.cpp -I ./include ; ./main`
-- linux: `g++ -o main main.cpp -I ./include -lX11 -lXtst ; ./main`
+- Windows: `g++ -o main main.cpp -I ./include ; ./main`
+- Linux: `g++ -o main main.cpp -I ./include -lX11 -lXtst ; ./main`
