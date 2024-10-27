@@ -229,10 +229,7 @@ public: input_t() noexcept : obj( new NODE() ) {}
 
     /*─······································································─*/
 
-	virtual ~input_t() noexcept { 
-		if( obj.count() > 1 )
-          { return; } free(); 
-	}
+	virtual ~input_t() noexcept { if( obj.count() > 1 ){ return; } free(); }
 
     /*─······································································─*/
 
@@ -240,14 +237,11 @@ public: input_t() noexcept : obj( new NODE() ) {}
 
     bool is_closed() const noexcept { return obj==nullptr ? 1 : obj->state==-1; }
 
-    virtual void free() const noexcept {
-        if( obj->state == -1 ){ return; } 
-			obj->state =  -1;
-    }
+    virtual void free() const noexcept { close(); }
 
     /*─······································································─*/
 
-    image_t take_screenshot() noexcept {
+    image_t take_screenshot() const noexcept {
         HDC hdcScreen     = GetDC( NULL );
         auto size         = get_screen_size();
         HDC hdcMemDC      = CreateCompatibleDC( hdcScreen );
@@ -343,8 +337,11 @@ public: input_t() noexcept : obj( new NODE() ) {}
 	}
 
     ptr_t<int> get_mouse_position() const noexcept { 
-        POINT mousePos; if (!GetCursorPos(&mousePos) ) { return nullptr; }
-        return {{ mousePos.x, mousePos.y, mousePos.x, mousePos.y }};
+        POINT mousePos; if (!GetCursorPos(&mousePos) ){ return nullptr; }
+        return ptr_t<int>({ 
+            mousePos.x, mousePos.y, 
+            mousePos.x, mousePos.y 
+        });
     }
 
 	void release_mouse_button( int btn ) const noexcept { int fg = 0;
@@ -405,16 +402,21 @@ public: input_t() noexcept : obj( new NODE() ) {}
     
     /*─······································································─*/
 
-	void pipe(){ if( obj->state == 1 ){ return; } auto self = type::bind( this );
-
+	void pipe() const noexcept { 
+        
+        if( obj->state == 1 ){ return; } auto self = type::bind( this );
         if( is_closed() )
           { process::error( onError, "can't start Winapi server" ); close(); return; }
+            
+        onExit([=](){ self->free(); });
 
-        process::loop::add([=](){ 
+        process::poll::add([=](){ 
+            if( self->is_closed() ){ return -1; }
         coStart 
 		
         	while( GetMessage( &self->obj->msg, NULL, 0, 0 ) == 0 ){ coNext; }
-			 TranslateMessage( &self->obj->msg ); DispatchMessage( &self->obj->msg );
+			       TranslateMessage( &self->obj->msg ); 
+                   DispatchMessage( &self->obj->msg );
 
     /*─······································································─*/
 
@@ -498,6 +500,10 @@ public: input_t() noexcept : obj( new NODE() ) {}
         });
 
     }
+    
+    /*─······································································─*/
+
+    void unpipe() const noexcept { close(); }
 
 };}
 

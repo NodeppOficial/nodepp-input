@@ -735,10 +735,9 @@ protected:
     };  ptr_t<NODE>  obj;
 
     ptr_t<float> screen_ref( const float& x, const float& y ) const noexcept{
-        auto size = get_screen_size(); return {{
-            x * size[0] / 100, 
-            y * size[1] / 100
-        }};
+        auto size = get_screen_size(); return ptr_t<float>({
+            x * size[0] / 100, y * size[1] / 100
+        });
 	};
 
 public: 
@@ -766,27 +765,24 @@ public:
 	
     /*─······································································─*/
 
-	virtual ~input_t() noexcept { 
-		if( obj.count() > 1 )
-          { return; } free(); 
-	}
+	virtual ~input_t() noexcept { if( obj.count() > 1 ){ return; } free(); }
 	
     /*─······································································─*/
 
-    Display* get_Display(){ return obj->dpy; }
-    void     set_Display( Display* dpy ){ obj->dpy = dpy; }
+    Display* get_Display()               const noexcept { return obj->dpy; }
+    void     set_Display( Display* dpy ) const noexcept { obj->dpy = dpy;  }
 
-    Screen*  get_Screen(){ return obj->scr; }
-    void     set_Screen( Screen* scr ){ obj->scr = scr; }
+    Screen*  get_Screen()              const noexcept { return obj->scr; }
+    void     set_Screen( Screen* scr ) const noexcept { obj->scr = scr;  }
 
-    XEvent&  get_XEvent(){ return obj->event; }
-    void     set_XEvent( XEvent ev ){ obj->event = ev; }
+    XEvent&  get_XEvent()            const noexcept { return obj->event; }
+    void     set_XEvent( XEvent ev ) const noexcept { obj->event = ev;   }
 
-    Window&  get_Window(){ return obj->win; }
-    void     set_window( Window win ){ obj->win = win; }
+    Window&  get_Window()             const noexcept { return obj->win; }
+    void     set_window( Window win ) const noexcept { obj->win = win;  }
 
-    int&     get_ID(){ return obj->id; }
-    void     set_ID( int id ){ obj->id = id; }
+    int&     get_ID()         const noexcept { return obj->id; }
+    void     set_ID( int id ) const noexcept { obj->id = id;   }
 
     /*─······································································─*/
 
@@ -795,17 +791,17 @@ public:
     bool is_closed() const noexcept { return obj==nullptr ? 1 : obj->state==-1; }
 
     virtual void free() const noexcept {
-        if( obj->state == -1 ){ return; } obj->state = -1; 
+        if( is_closed() ){ return; } close();
         	XDestroyWindow( obj->dpy, obj->win ); 
 			XCloseDisplay( obj->dpy );
     }
 
     /*─······································································─*/
 
-    image_t take_screenshot() noexcept { auto size = this->get_screen_size();
+    image_t take_screenshot() const noexcept { auto size = this->get_screen_size();
         XImage *img = XGetImage( obj->dpy, obj->root, 0, 0, size[0], size[1], AllPlanes, ZPixmap );
         ptr_t<char> data ( img->bytes_per_line * img->height, 0 ); 
-        memcpy( &data, img->data, data.size() );
+                    memcpy( &data, img->data, data.size() );
 
         image_t image; 
                 image.data   = data;
@@ -818,8 +814,8 @@ public:
     /*─······································································─*/
 
     string_t get_clipboard() const noexcept {
-        Atom utf8String = XInternAtom( obj->dpy, "UTF8_STRING", 0 );
-        Atom clipboard  = XInternAtom( obj->dpy, "CLIPBOARD"  , 0 );
+        Atom utf8String = XInternAtom( obj->dpy, "UTF8_STRING",0 );
+        Atom clipboard  = XInternAtom( obj->dpy, "CLIPBOARD"  ,0 );
         Atom type; int format; ulong length; uchar* data = nullptr;
 
         XGetWindowProperty( obj->dpy, obj->win, clipboard, 0, LONG_MAX, 0, utf8String, &type, &format, &length, &length, &data);
@@ -838,9 +834,14 @@ public:
 
     /*─······································································─*/
 
-	ptr_t<int> get_screen_size() const noexcept { return {{ obj->scr->width, obj->scr->height }}; }
+	int get_screen_length() const noexcept { return XScreenCount( obj->dpy ); }
 
-	int      get_screen_length() const noexcept { return XScreenCount( obj->dpy ); }
+	ptr_t<int> get_screen_size() const noexcept { 
+        return ptr_t<float>({ 
+            obj->scr->width, 
+            obj->scr->height 
+        });
+    }
 
     /*─······································································─*/
 
@@ -923,8 +924,9 @@ public:
     
     /*─······································································─*/
 
-	void pipe(){ if( obj->state == 1 ){ return; } auto self = type::bind( this );
-
+	void pipe() const noexcept { 
+        
+        if( obj->state == 1 ){ return; } auto self = type::bind( this );
         if( obj->dpy == NULL )
           { process::error( onError, "can't start X11 server" ); close(); return; }
 
@@ -932,12 +934,15 @@ public:
                       KeyReleaseMask  | KeyPressMask      ;
 
         XSelectInput( obj->dpy, obj->win, events ); obj->state = 1;
+            
+        onExit([=](){ self->free(); });
 
-        process::loop::add([=](){ 
+        process::poll::add([=](){ 
+            if( self->is_closed() ){ return -1; }
         coStart 
 		
         	while( XPending( self->obj->dpy ) <= 0 ){ coNext; } 
-                 XNextEvent( self->obj->dpy, &self->obj->event );
+                   XNextEvent( self->obj->dpy, &self->obj->event );
 
     /*─······································································─*/
 
@@ -990,6 +995,10 @@ public:
         });
 
     }
+    
+    /*─······································································─*/
+
+    void unpipe() const noexcept { close(); }
 
 };}
 
