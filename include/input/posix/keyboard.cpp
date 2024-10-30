@@ -1,5 +1,3 @@
-#pragma once
-
 //https://manpages.ubuntu.com/manpages/focal/man7/virkeycode-linux.7.html
 
 /*
@@ -706,207 +704,75 @@
 524 (0x20c) Key name KEY_RFKILL
 */
 
+/*
+ * Copyright 2023 The Nodepp Project Authors. All Rights Reserved.
+ *
+ * Licensed under the MIT (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://github.com/NodeppOficial/nodepp/blob/main/LICENSE
+ */
+
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#include <limits.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
-#include <X11/extensions/XTest.h>
+#pragma once
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-namespace nodepp { class input_t {
+namespace nodepp { class keyboard_t {
 protected:
 
-    struct image_t {
-        int width, height;
-        ptr_t<char> data;
-    };
-
     struct NODE {
-        XEvent   event; int state = 0;
-    	array_t<uint> button, key;
         Display* dpy = nullptr;
-        Screen*  scr = nullptr;
-        Window   root;
-        Window   win;
-        int      id;
-    };  ptr_t<NODE>  obj;
+        array_t<uint> key;
+    };  ptr_t<NODE>   obj;
 
-    ptr_t<float> screen_ref( const float& x, const float& y ) const noexcept{
-        auto size = get_screen_size(); return ptr_t<float>({
-            x * size[0] / 100, y * size[1] / 100
-        });
-	};
+public:
 
-public: 
+    event_t<uint>   onKeyRelease;
+    event_t<uint>   onKeyPress;
 
-    event_t<uint>      onButtonRelease;
-    event_t<uint>      onButtonPress;
-
-    event_t<uint,uint> onMouseMotion;
-
-    event_t<uint>      onKeyRelease;
-    event_t<uint>      onKeyPress;
-
-    event_t<except_t>  onError;
-    event_t<>          onClose;
-	
     /*─······································································─*/
 
-    input_t() noexcept : obj( new NODE() ) {
-        obj->dpy = XOpenDisplay( NULL );
-        obj->id  = DefaultScreen( obj->dpy );
-        obj->root= DefaultRootWindow( obj->dpy );
-        obj->win = XRootWindow( obj->dpy, obj->id );
-        obj->scr = DefaultScreenOfDisplay( obj->dpy );
+    int next() const noexcept {
+    coStart
+
+        do {
+            auto events = KeyReleaseMask | KeyPressMask ;
+            uint   idx  = DefaultScreen( obj->dpy );
+            Window win  = XRootWindow( obj->dpy, idx );
+            XSelectInput( obj->dpy, win, events );
+        } while(0); coYield(1);
+
+        while( XPending( obj->dpy ) > 0 ){
+        
+            XEvent ev;
+            memset( &ev, 0, sizeof(ev) );
+            XNextEvent( obj->dpy, &ev );
+
+            if ( ev.type == KeyRelease ) { 
+                 auto bt =  ev.xkey.keycode;
+            for( ulong x=obj->key.size(); x--; ){
+             if( obj->key[x] == bt ) 
+               { obj->key.erase(x); }
+               } onKeyRelease.emit( bt ); 
+            }
+
+            elif( ev.type == KeyPress ) { 
+                  auto bt =  ev.xkey.keycode;
+             for( ulong x=obj->key.size(); x--; ){
+              if( obj->key[x] == bt ){ coGoto(1); }
+                } obj->key.push( bt ); 
+                  onKeyPress.emit( bt );
+            }
+        
+          coNext; 
+        } coGoto(1);
+
+    coStop
     }
 	
     /*─······································································─*/
-
-	virtual ~input_t() noexcept { if( obj.count() > 1 ){ return; } free(); }
-	
-    /*─······································································─*/
-
-    Display* get_Display()               const noexcept { return obj->dpy; }
-    void     set_Display( Display* dpy ) const noexcept { obj->dpy = dpy;  }
-
-    Screen*  get_Screen()              const noexcept { return obj->scr; }
-    void     set_Screen( Screen* scr ) const noexcept { obj->scr = scr;  }
-
-    XEvent&  get_XEvent()            const noexcept { return obj->event; }
-    void     set_XEvent( XEvent ev ) const noexcept { obj->event = ev;   }
-
-    Window&  get_Window()             const noexcept { return obj->win; }
-    void     set_window( Window win ) const noexcept { obj->win = win;  }
-
-    int&     get_ID()         const noexcept { return obj->id; }
-    void     set_ID( int id ) const noexcept { obj->id = id;   }
-
-    /*─······································································─*/
-
-    void close() const noexcept { if( obj->state == -1 ){ return; } obj->state = -1; onClose.emit(); }
-
-    bool is_closed() const noexcept { return obj==nullptr ? 1 : obj->state==-1; }
-
-    virtual void free() const noexcept {
-        if( is_closed() ){ return; } close();
-        	XDestroyWindow( obj->dpy, obj->win ); 
-			XCloseDisplay( obj->dpy );
-    }
-
-    /*─······································································─*/
-
-    image_t take_screenshot() const noexcept { auto size = this->get_screen_size();
-        XImage *img = XGetImage( obj->dpy, obj->root, 0, 0, size[0], size[1], AllPlanes, ZPixmap );
-        ptr_t<char> data ( img->bytes_per_line * img->height, 0 ); 
-                    memcpy( &data, img->data, data.size() );
-
-        image_t image; 
-                image.data   = data;
-                image.width  = img->width;
-                image.height = img->height;
-
-        XDestroyImage(img); return image;
-    }
-
-    /*─······································································─*/
-
-    string_t get_clipboard() const noexcept {
-        Atom utf8String = XInternAtom( obj->dpy, "UTF8_STRING",0 );
-        Atom clipboard  = XInternAtom( obj->dpy, "CLIPBOARD"  ,0 );
-        Atom type; int format; ulong length; uchar* data = nullptr;
-
-        XGetWindowProperty( obj->dpy, obj->win, clipboard, 0, LONG_MAX, 0, utf8String, &type, &format, &length, &length, &data);
-
-        if ( type == utf8String && format == 8 ) {
-            string_t result = { (char*) data, length };
-            XFree( data ); return result;
-        } else { return nullptr; }
-    }
-
-    int set_clipboard( string_t msg ) const noexcept {
-        Atom utf8String = XInternAtom( obj->dpy, "UTF8_STRING", 0 ); 
-        Atom clipboard  = XInternAtom( obj->dpy, "CLIPBOARD"  , 0 );
-        return XChangeProperty( obj->dpy, obj->win, clipboard, utf8String, 8, PropModeReplace, (uchar*)(msg.c_str()), msg.size() );
-    }
-
-    /*─······································································─*/
-
-	int get_screen_length() const noexcept { return XScreenCount( obj->dpy ); }
-
-	ptr_t<int> get_screen_size() const noexcept { 
-        return ptr_t<float>({ 
-            obj->scr->width, 
-            obj->scr->height 
-        });
-    }
-
-    /*─······································································─*/
-
-    ptr_t<int> get_mouse_position() const noexcept { int rootX, rootY, winX, winY; uint mask; Window child;
-        XQueryPointer( obj->dpy, obj->win, &obj->win, &child, &rootX, &rootY, &winX, &winY, &mask);
-             return {{ winX, winY, rootX, rootY }};
-    }
-
-	void set_mouse_position( float x, float y ) const noexcept {
-        auto sr = screen_ref( x, y ); ptr_t<float> r ({ sr[0], sr[1] });
-		XTestFakeMotionEvent(obj->dpy,obj->id,r[0],r[1],CurrentTime);
-		XFlush( obj->dpy );
-	}
-
-	void release_mouse_button( int btn ) const noexcept { 
-		XTestFakeButtonEvent(obj->dpy,btn,0,CurrentTime);
-		XFlush( obj->dpy );
-	}
-
-	void press_mouse_button( int btn ) const noexcept { 
-		XTestFakeButtonEvent(obj->dpy,btn,1,CurrentTime);
-		XFlush( obj->dpy );
-	}
-
-	void scroll_mouse_up() const noexcept {
-		 XTestFakeButtonEvent(obj->dpy,4,1,CurrentTime);
-		 XTestFakeButtonEvent(obj->dpy,4,0,CurrentTime);
-		 XFlush( obj->dpy );
-	}
-
-	void scroll_mouse_down() const noexcept {
-		 XTestFakeButtonEvent(obj->dpy,5,1,CurrentTime);
-		 XTestFakeButtonEvent(obj->dpy,5,0,CurrentTime);
-		 XFlush( obj->dpy );
-	}
-
-    /*─······································································─*/
-
-	void release_key_button( int key ) const noexcept { 
-		auto k = XKeysymToKeycode(obj->dpy,key);
-		XTestFakeButtonEvent(obj->dpy,k,0,CurrentTime);
-		XFlush( obj->dpy );
-	}
-
-	void press_key_button( int key ) const noexcept {
-		auto k = XKeysymToKeycode(obj->dpy,key);
-		XTestFakeButtonEvent(obj->dpy,k,1,CurrentTime);
-		XFlush( obj->dpy );
-	}
-
-    /*─······································································─*/
-
-    bool is_button_released( uint btn ) const noexcept {
-        if( obj->button.empty() ) return 1; 
-        else { for( auto x : obj->button ){
-           if( x == btn ) return 0;
-        }}                return 1;
-    }
-
-    bool is_button_pressed( uint btn ) const noexcept {
-        if( obj->button.empty() ) return 0; 
-        else { for( auto x : obj->button ){
-           if( x == btn ) return 1;
-        }}                return 0;
-    }
 
     bool is_key_released( uint btn ) const noexcept {
         if( obj->key.empty() ) return 1; 
@@ -921,84 +787,56 @@ public:
            if( x == btn ) return 1;
         }}                return 0;
     }
-    
+	
     /*─······································································─*/
 
-	void pipe() const noexcept { 
+	void release( int key ) const noexcept { 
+        XEvent event; memset( &event, 0, sizeof(event) );
+        uint   idx = DefaultScreen( obj->dpy );
+        Window win = XRootWindow(obj->dpy,idx);
+
+        event.xkey.keycode   = XKeysymToKeycode( obj->dpy, key );
+        event.xkey.time      = CurrentTime;
+        event.type           = KeyPress;
+        event.xkey.display   = obj->dpy;
+        event.xkey.window    = win;
+        event.xkey.root      = win;
+        event.xkey.subwindow = win;
         
-        if( obj->state == 1 ){ return; } auto self = type::bind( this );
-        if( obj->dpy == NULL )
-          { process::error( onError, "can't start X11 server" ); close(); return; }
+        XSendEvent( obj->dpy, win, 1, 0, &event );
+		XFlush( obj->dpy );
+	}
 
-        auto events = ButtonPressMask | ButtonReleaseMask | ButtonMotionMask |
-                      KeyReleaseMask  | KeyPressMask      ;
+	void press( int key ) const noexcept {
+        XEvent event; memset( &event, 0, sizeof(event) );
+        uint   idx = DefaultScreen( obj->dpy );
+        Window win = XRootWindow(obj->dpy,idx);
 
-        XSelectInput( obj->dpy, obj->win, events ); obj->state = 1;
-            
-        onExit([=](){ self->free(); });
-
-        process::poll::add([=](){ 
-            if( self->is_closed() ){ return -1; }
-        coStart 
-		
-        	while( XPending( self->obj->dpy ) <= 0 ){ coNext; } 
-                   XNextEvent( self->obj->dpy, &self->obj->event );
-
-    /*─······································································─*/
-
-            if( self->obj->event.type == MotionNotify ) { 
-                auto bt = self->obj->event.xmotion;
-                self->onMouseMotion.emit( bt.x, bt.y ); 
-            }
+        event.xkey.keycode   = XKeysymToKeycode( obj->dpy, key );
+        event.xkey.time      = CurrentTime;
+        event.type           = KeyRelease;
+        event.xkey.display   = obj->dpy;
+        event.xkey.window    = win;
+        event.xkey.root      = win;
+        event.xkey.subwindow = win;
+        
+        XSendEvent( obj->dpy, win, 1, 0, &event );
+		XFlush( obj->dpy );
+	}
 
     /*─······································································─*/
 
-            elif( self->obj->event.type == ButtonRelease ) { 
-                     auto bt = self->obj->event.xbutton.button;
-                for( ulong x=self->obj->button.size(); x--; ){
-                 if( self->obj->button[x] == bt ) 
-                   { self->obj->button.erase(x); }
-                }    self->onButtonRelease.emit( bt ); 
-            }
-
-            elif( self->obj->event.type == ButtonPress ) { 
-                     auto bt = self->obj->event.xbutton.button;
-                for( ulong x=self->obj->button.size(); x--; ){
-                 if( self->obj->button[x] == bt ){ return 1; }
-                }    self->obj->button.push( bt ); 
-                     self->onButtonPress.emit( bt );
-            }
-
-    /*─······································································─*/
-
-            elif( self->obj->event.type == KeyRelease ) { 
-                     auto bt = self->obj->event.xkey.keycode;
-                for( ulong x=self->obj->key.size(); x--; ){
-                 if( self->obj->key[x] == bt ) 
-                   { self->obj->key.erase(x); }
-                }    self->onKeyRelease.emit( bt ); 
-            }
-
-            elif( self->obj->event.type == KeyPress ) { 
-                     auto bt = self->obj->event.xkey.keycode;
-                for( ulong x=self->obj->key.size(); x--; ){
-                 if( self->obj->key[x] == bt ){ return 1; }
-                }    self->obj->key.push( bt ); 
-                     self->onKeyPress.emit( bt );
-            }
-
-    /*─······································································─*/
-
-            if( !self->is_closed() ) coGoto(0);
-			
-		coStop 
-        });
-
+    keyboard_t () noexcept : obj( new NODE() ) {
+        obj->dpy = XOpenDisplay( nullptr ); if ( !obj->dpy ) { 
+            process::error("Unable to open X display"); 
+            return;
+        }
     }
-    
-    /*─······································································─*/
 
-    void unpipe() const noexcept { close(); }
+   ~keyboard_t () noexcept {
+        if( obj.count() > 1 ){ return; }
+        if( obj->dpy != nullptr ){ XCloseDisplay(obj->dpy); }
+    }
 
 };}
 
