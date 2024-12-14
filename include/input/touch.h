@@ -16,15 +16,11 @@
 
 #if   _KERNEL == NODEPP_KERNEL_WINDOWS
 
-    #include <windows.h>
     #include <Xinput.h>
     #include <winuser.h>
     #include <windowsx.h>
 
-    #include "windows/keyboard.cpp"
-    #include "windows/gamepad.cpp"
     #include "windows/touch.cpp"
-    #include "windows/mouse.cpp"
 
 #elif _KERNEL == NODEPP_KERNEL_POSIX
 
@@ -33,13 +29,10 @@
     #include <X11/keysym.h>
     #include <X11/extensions/XInput2.h>
 
-    #include "posix/keyboard.cpp"
-    #include "posix/gamepad.cpp"
     #include "posix/touch.cpp"
-    #include "posix/mouse.cpp"
 
 #else
-    #error "This OS Does not support input.h"
+    #error "This OS Does not support touch.h"
 #endif
 
 /*────────────────────────────────────────────────────────────────────────────*/

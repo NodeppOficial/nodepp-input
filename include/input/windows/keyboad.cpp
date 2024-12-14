@@ -244,30 +244,30 @@ public:
     bool is_key_released( uint btn ) const noexcept {
         if( obj->key.empty() ) return 1; 
         else { for( auto x : obj->key ){
-           if( x == btn ) return 0;
+          if ( x == btn ) return 0;
         }}                return 1;
     }
 
     bool is_key_pressed( uint btn ) const noexcept {
         if( obj->key.empty() ) return 0; 
         else { for( auto x : obj->key ){
-           if( x == btn ) return 1;
+          if ( x == btn ) return 1;
         }}                return 0;
     }
     
     /*─······································································─*/
 
-	void release_key_button( int key ) const noexcept { 
+	void release( int key ) const noexcept { 
 		keybd_event( key, 0x45, 0, 0 ); 
 	}
 
-	void press_key_button( int key ) const noexcept { 
+	void press( int key ) const noexcept { 
         keybd_event( key, 0x45, 2, 0 );
 	}
 
     /*─······································································─*/
 
-    keyboard_t () noexcept : obj( new NODE() ) {}
+    keyboard_t () noexcept : obj( new NODE() ) { next(); }
 
 };}
 

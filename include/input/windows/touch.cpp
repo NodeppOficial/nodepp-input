@@ -91,7 +91,7 @@ public:
 
     /*─······································································─*/
 
-    touch_t () noexcept : obj( new NODE() ) {}
+    touch_t () noexcept : obj( new NODE() ) { next(); }
 
 };}
 

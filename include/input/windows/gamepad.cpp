@@ -121,7 +121,7 @@ public:
 
     /*─······································································─*/
 
-    gamepad_t ( int deviceID=0 ) : obj( new NODE() ) { obj->deviceID = deviceID; }
+    gamepad_t ( int deviceID=0 ) : obj( new NODE() ) { obj->deviceID = deviceID; next(); }
 
 };}
 

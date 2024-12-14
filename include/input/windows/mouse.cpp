@@ -16,13 +16,6 @@
 namespace nodepp { class mouse_t {
 protected:
 
-    ptr_t<float> screen_ref( const float& x, const float& y ) const noexcept{
-        auto size = get_screen_size(); return ptr_t<float>({
-            x * ::GetSystemMetrics( SM_CXSCREEN ) / 100, 
-            y * ::GetSystemMetrics( SM_CYSCREEN ) / 100
-        });
-	};
-
     struct NODE {
         array_t<uint> button;
         MSG           msg;
@@ -96,25 +89,53 @@ public:
 
     /*─······································································─*/
 
-	void scroll_mouse_down() const noexcept { mouse_event( MOUSEEVENTF_WHEEL, 0, 0, 120, 0 ); }
+    ptr_t<float> get_screen_size() const noexcept{
+        auto size = get_screen_size(); return ptr_t<float>({
+            ::GetSystemMetrics( SM_CXSCREEN ), 
+            ::GetSystemMetrics( SM_CYSCREEN )
+        });
+	};
 
-	void   scroll_mouse_up() const noexcept { mouse_event( MOUSEEVENTF_WHEEL, 0, 0,-120, 0 ); }
-
-    ptr_t<int> get_mouse_position() const noexcept { 
+    ptr_t<int> get_position() const noexcept { 
         POINT mousePos; if (!GetCursorPos(&mousePos) ){ return nullptr; }
         return ptr_t<int>({ mousePos.x, mousePos.y, mousePos.x, mousePos.y });
     }
+    
+    /*─······································································─*/
 
-	void set_mouse_position( float x, float y ) const noexcept {
+    bool is_button_released( uint btn ) const noexcept {
+        if( obj->button.empty() ) return 1; 
+        else { for( auto x : obj->button ){
+          if ( x == btn ) return 0;
+        }}                return 1;
+    }
+
+    bool is_button_pressed( uint btn ) const noexcept {
+        if( obj->button.empty() ) return 0; 
+        else { for( auto x : obj->button ){
+          if ( x == btn ) return 1;
+        }}                return 0;
+    }
+
+    /*─······································································─*/
+
+	void move( float x, float y ) const noexcept {
 		auto fg = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
-        auto sr = screen_ref( x, y );
-        auto sz = get_screen_size( );
-		auto dx = sr[0] * ( 65535.0f / sz[0] );
-		auto dy = sr[1] * ( 65535.0f / sz[1] );
+		auto dx = x / 100.0f * 65535.0f;
+		auto dy = y / 100.0f * 65535.0f;
 		mouse_event( fg, dx, dy, 0, 0 );
 	}
 
-	void release_mouse_button( int button ) const noexcept { 
+	void press( int button ) const noexcept { 
+        int fg = 0; switch( button ){
+			case 3:  fg = MOUSEEVENTF_MIDDLEDOWN; break;
+			case 2:  fg = MOUSEEVENTF_RIGHTDOWN;  break;
+			case 1:  fg = MOUSEEVENTF_LEFTDOWN;   break;
+            default: fg = button;                 break;
+		} 	mouse_event( fg, 0, 0, 1, 0 ); 
+	}
+
+	void release( int button ) const noexcept { 
         int fg = 0; switch( button ){
 			case 3:  fg = MOUSEEVENTF_MIDDLEUP; break;
 			case 2:  fg = MOUSEEVENTF_RIGHTUP;  break;
@@ -123,34 +144,15 @@ public:
 		} 	mouse_event( fg, 0, 0, 1, 0 ); 
 	}
 
-	void press_mouse_button( int button ) const noexcept { 
-        int fg = 0; switch( button ){
-			case 3:  fg = MOUSEEVENTF_MIDDLEDOWN; break;
-			case 2:  fg = MOUSEEVENTF_RIGHTDOWN;  break;
-			case 1:  fg = MOUSEEVENTF_LEFTDOWN;   break;
-            default: fg = button;                 break;
-		} 	mouse_event( fg, 0, 0, 1, 0 ); 
-	}
-    
     /*─······································································─*/
 
-    bool is_button_released( uint btn ) const noexcept {
-        if( obj->button.empty() ) return 1; 
-        else { for( auto x : obj->button ){
-           if( x == btn ) return 0;
-        }}                return 1;
-    }
+	void scroll_up  () const noexcept { mouse_event( MOUSEEVENTF_WHEEL, 0, 0,-120, 0 ); }
 
-    bool is_button_pressed( uint btn ) const noexcept {
-        if( obj->button.empty() ) return 0; 
-        else { for( auto x : obj->button ){
-           if( x == btn ) return 1;
-        }}                return 0;
-    }
+	void scroll_down() const noexcept { mouse_event( MOUSEEVENTF_WHEEL, 0, 0, 120, 0 ); }
 
     /*─······································································─*/
 
-    mouse_t () noexcept : obj( new NODE() ) {}
+    mouse_t () noexcept : obj( new NODE() ) { next(); }
 
 };}
 

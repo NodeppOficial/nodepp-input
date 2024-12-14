@@ -724,13 +724,14 @@ protected:
 
     struct NODE {
         Display* dpy = nullptr;
+        XDevice* xid = nullptr;
         array_t<uint> key;
     };  ptr_t<NODE>   obj;
 
 public:
 
-    event_t<uint>   onKeyRelease;
-    event_t<uint>   onKeyPress;
+    event_t<uint> onKeyRelease;
+    event_t<uint> onKeyPress;
 
     /*─······································································─*/
 
@@ -745,10 +746,7 @@ public:
         } while(0); coYield(1);
 
         while( XPending( obj->dpy ) > 0 ){
-        
-            XEvent ev;
-            memset( &ev, 0, sizeof(ev) );
-            XNextEvent( obj->dpy, &ev );
+            XEvent ev; XNextEvent( obj->dpy, &ev );
 
             if ( ev.type == KeyRelease ) { 
                  auto bt =  ev.xkey.keycode;
@@ -766,8 +764,7 @@ public:
                   onKeyPress.emit( bt );
             }
         
-          coNext; 
-        } coGoto(1);
+        coNext; } coGoto(1);
 
     coStop
     }
@@ -777,50 +774,26 @@ public:
     bool is_key_released( uint btn ) const noexcept {
         if( obj->key.empty() ) return 1; 
         else { for( auto x : obj->key ){
-           if( x == btn ) return 0;
+          if ( x == btn ) return 0;
         }}                return 1;
     }
 
     bool is_key_pressed( uint btn ) const noexcept {
         if( obj->key.empty() ) return 0; 
         else { for( auto x : obj->key ){
-           if( x == btn ) return 1;
+          if ( x == btn ) return 1;
         }}                return 0;
     }
 	
     /*─······································································─*/
 
-	void release( int key ) const noexcept { 
-        XEvent event; memset( &event, 0, sizeof(event) );
-        uint   idx = DefaultScreen( obj->dpy );
-        Window win = XRootWindow(obj->dpy,idx);
-
-        event.xkey.keycode   = XKeysymToKeycode( obj->dpy, key );
-        event.xkey.time      = CurrentTime;
-        event.type           = KeyPress;
-        event.xkey.display   = obj->dpy;
-        event.xkey.window    = win;
-        event.xkey.root      = win;
-        event.xkey.subwindow = win;
-        
-        XSendEvent( obj->dpy, win, 1, 0, &event );
+	void press( int key ) const noexcept {
+        XTestFakeKeyEvent( obj->dpy, key, True, CurrentTime );
 		XFlush( obj->dpy );
 	}
 
-	void press( int key ) const noexcept {
-        XEvent event; memset( &event, 0, sizeof(event) );
-        uint   idx = DefaultScreen( obj->dpy );
-        Window win = XRootWindow(obj->dpy,idx);
-
-        event.xkey.keycode   = XKeysymToKeycode( obj->dpy, key );
-        event.xkey.time      = CurrentTime;
-        event.type           = KeyRelease;
-        event.xkey.display   = obj->dpy;
-        event.xkey.window    = win;
-        event.xkey.root      = win;
-        event.xkey.subwindow = win;
-        
-        XSendEvent( obj->dpy, win, 1, 0, &event );
+	void release( int key ) const noexcept { 
+        XTestFakeKeyEvent( obj->dpy, key, False, CurrentTime );
 		XFlush( obj->dpy );
 	}
 
@@ -830,7 +803,7 @@ public:
         obj->dpy = XOpenDisplay( nullptr ); if ( !obj->dpy ) { 
             process::error("Unable to open X display"); 
             return;
-        }
+        }   next();
     }
 
    ~keyboard_t () noexcept {

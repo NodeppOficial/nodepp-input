@@ -50,10 +50,7 @@ public:
         } while(0); coYield(1);
 
         while( XPending( obj->dpy ) > 0 ){
-        
-            XEvent ev;
-            memset( &ev, 0, sizeof(ev) );
-            XNextEvent( obj->dpy, &ev );
+            XEvent ev; XNextEvent( obj->dpy, &ev );
 
             if( ev.xcookie.type == GenericEvent ){
                 XGetEventData( obj->dpy, &ev.xcookie );
@@ -71,8 +68,7 @@ public:
                 XFreeEventData( obj->dpy, &ev.xcookie );
             }
         
-          coNext; 
-        } coGoto(1);
+        coNext; } coGoto(1);
 
     coStop
     }
@@ -80,10 +76,9 @@ public:
     /*─······································································─*/
 
 	void move( int x, int y ) const noexcept { 
+        Window win = XRootWindow(obj->dpy,DefaultScreen( obj->dpy ));
         XIDeviceEvent event; memset( &event, 0, sizeof(event) );
         XEvent xevent; memset( &xevent, 0, sizeof(xevent) );
-        uint   idx = DefaultScreen( obj->dpy );
-        Window win = XRootWindow(obj->dpy,idx);
 
         event.evtype    = XI_TouchUpdate;
         event.deviceid  = obj->deviceID;
@@ -103,10 +98,9 @@ public:
 	}
 
 	void begin( int x, int y ) const noexcept { 
+        Window win = XRootWindow(obj->dpy,DefaultScreen( obj->dpy ));
         XIDeviceEvent event; memset( &event, 0, sizeof(event) );
         XEvent xevent; memset( &xevent, 0, sizeof(xevent) );
-        uint   idx = DefaultScreen( obj->dpy );
-        Window win = XRootWindow(obj->dpy,idx);
 
         event.evtype    = XI_TouchBegin;
         event.deviceid  = obj->deviceID;
@@ -121,15 +115,14 @@ public:
         xevent.type              = GenericEvent;
         xevent.xcookie.data      = &event;
 
-        XSendEvent( obj->dpy, win, 1, 0, &xevent );
+        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
         XFlush( obj->dpy );
 	}
 
 	void end( int x, int y ) const noexcept { 
+        Window win = XRootWindow(obj->dpy,DefaultScreen( obj->dpy ));
         XIDeviceEvent event; memset( &event, 0, sizeof(event) );
         XEvent xevent; memset( &xevent, 0, sizeof(xevent) );
-        uint   idx = DefaultScreen( obj->dpy );
-        Window win = XRootWindow(obj->dpy,idx);
 
         event.deviceid  = obj->deviceID;
         event.type      = GenericEvent;
@@ -144,7 +137,7 @@ public:
         xevent.type              = GenericEvent;
         xevent.xcookie.data      = &event;
 
-        XSendEvent( obj->dpy, win, 1, 0, &xevent );
+        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
         XFlush( obj->dpy );
 	}
 
@@ -154,7 +147,7 @@ public:
         obj->dpy = XOpenDisplay( nullptr ); if ( !obj->dpy ) { 
             process::error("Unable to open X display"); 
             return;
-        }   obj->deviceID = deviceID;
+        }   obj->deviceID = deviceID; next();
     }
 
    ~touch_t () noexcept {

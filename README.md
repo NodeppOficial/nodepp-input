@@ -9,6 +9,6 @@ Emulate Keyboard | Mouse | Gamepad | Touch Inputs in Windows, Linux, FreeBSD and
 
 ## Build & Run
 ```bash
-- 🐧: g++ -o main main.cpp -I ./include lX11 -lXtst -lXi ; ./main
 - 🪟: g++ -o main main.cpp -I ./include -lws2_32 ; ./main
+- 🐧: g++ -o main main.cpp -I ./include lX11 -lXtst -lXi ; ./main
 ```
