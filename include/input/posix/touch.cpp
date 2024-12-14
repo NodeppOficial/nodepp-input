@@ -93,7 +93,7 @@ public:
         xevent.type              = GenericEvent;
         xevent.xcookie.data      = &event;
 
-        XSendEvent( obj->dpy, win, 0, 0, &xevent );
+        XSendEvent( obj->dpy, win, 1, 0xfff, &xevent );
         XFlush(obj->dpy);
 	}
 
@@ -115,7 +115,7 @@ public:
         xevent.type              = GenericEvent;
         xevent.xcookie.data      = &event;
 
-        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
+        XSendEvent( obj->dpy, win, 1, 0xfff, &xevent );
         XFlush( obj->dpy );
 	}
 
@@ -137,7 +137,7 @@ public:
         xevent.type              = GenericEvent;
         xevent.xcookie.data      = &event;
 
-        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
+        XSendEvent( obj->dpy, win, 1, 0xfff, &xevent );
         XFlush( obj->dpy );
 	}
 
