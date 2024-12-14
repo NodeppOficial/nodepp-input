@@ -93,21 +93,21 @@ public:
         XIDeviceEvent event; memset( &event, 0, sizeof(event) );
         XEvent xevent; memset( &xevent, 0, sizeof(xevent) );
 
-        event.deviceid  = obj->deviceID;
-        event.type      = GenericEvent;
-        event.time      = CurrentTime;
-        event.evtype    = XI_Motion;
-        event.detail    = button;
-        event.event     = win;
-        event.root      = win;
-        event.event_x   = x;
-        event.event_y   = y;
+        event.deviceid      = obj->deviceID;
+        event.type          = GenericEvent;
+        event.time          = CurrentTime;
+        event.evtype        = XI_Motion;
+        event.detail        = button;
+        event.event         = win;
+        event.root          = win;
+        event.event_x       = x;
+        event.event_y       = y;
 
-        xevent.xcookie.type      = GenericEvent;
-        xevent.type              = GenericEvent;
-        xevent.xcookie.data      = &event;
+        xevent.xcookie.type = GenericEvent;
+        xevent.type         = GenericEvent;
+        xevent.xcookie.data = &event;
 
-        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
+        XSendEvent( obj->dpy, win, 1, 0xfff, &xevent );
         XFlush(obj->dpy);
 	}
 
@@ -116,19 +116,19 @@ public:
         XIDeviceEvent event; memset( &event, 0, sizeof(event) );
         XEvent xevent; memset( &xevent, 0, sizeof(xevent) );
 
-        event.evtype    = XI_ButtonPress;
-        event.deviceid  = obj->deviceID;
-        event.type      = GenericEvent;
-        event.time      = CurrentTime;
-        event.detail    = button;
-        event.event     = win;
-        event.root      = win;
+        event.evtype        = XI_ButtonPress;
+        event.deviceid      = obj->deviceID;
+        event.type          = GenericEvent;
+        event.time          = CurrentTime;
+        event.detail        = button;
+        event.event         = win;
+        event.root          = win;
 
-        xevent.xcookie.type      = GenericEvent;
-        xevent.type              = GenericEvent;
-        xevent.xcookie.data      = &event;
+        xevent.xcookie.type = GenericEvent;
+        xevent.type         = GenericEvent;
+        xevent.xcookie.data = &event;
 
-        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
+        XSendEvent( obj->dpy, win, 1, 0xfff, &xevent );
         XFlush( obj->dpy );
 	}
 
@@ -137,19 +137,19 @@ public:
         XIDeviceEvent event; memset( &event, 0, sizeof(event) );
         XEvent xevent; memset( &xevent, 0, sizeof(xevent) );
 
-        event.evtype    = XI_ButtonRelease;
-        event.deviceid  = obj->deviceID;
-        event.type      = GenericEvent;
-        event.time      = CurrentTime;
-        event.detail    = button;
-        event.event     = win;
-        event.root      = win;
+        event.evtype        = XI_ButtonRelease;
+        event.deviceid      = obj->deviceID;
+        event.type          = GenericEvent;
+        event.time          = CurrentTime;
+        event.detail        = button;
+        event.event         = win;
+        event.root          = win;
 
-        xevent.xcookie.type      = GenericEvent;
-        xevent.type              = GenericEvent;
-        xevent.xcookie.data      = &event;
+        xevent.xcookie.type = GenericEvent;
+        xevent.type         = GenericEvent;
+        xevent.xcookie.data = &event;
 
-        XSendEvent( obj->dpy, win, 0, 0xfff, &xevent );
+        XSendEvent( obj->dpy, win, 1, 0xfff, &xevent );
         XFlush( obj->dpy );
 	}
 
